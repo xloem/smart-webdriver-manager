@@ -146,7 +146,7 @@ The default directory for the cache is as follows:
 
 TODO
 ----
-- [ ] Change the user data directory to fall under the major version, not release (see illustration above).
+- [x] Change the user data directory to fall under the major version, not release (see illustration above).
 - [ ] Complete support for Mac. Parse .app directory and create workaround for Gatekeeper.
 - [ ] Decide whether symlinks have value, remove code if not.
 - [ ] Complete the cache clear/remove methods. Write methods to delete the data directory or parts of the cache.
