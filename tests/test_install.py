@@ -4,13 +4,13 @@ from smart_webdriver_manager import ChromeDriverManager
 from util import run_chrome_helper
 
 import logging
+
 logging.basicConfig(level=logging.INFO)
 
 
 @pytest.mark.skip()
 def test_install():
-    """Set up latest chromium browser/driver on local
-    """
+    """Set up latest chromium browser/driver on local"""
     print()
     cdm = ChromeDriverManager(version=75)
     browser_path = cdm.get_browser()
@@ -40,6 +40,8 @@ def test_install():
     run_chrome_helper(driver_path, browser_path, user_data_path)
 
 
-if __name__ == '__main__':
-    import logging; logging.basicConfig(level=logging.INFO)
-    pytest.main(args=['-s', __file__])
+if __name__ == "__main__":
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
+    pytest.main(args=["-s", __file__])

@@ -17,6 +17,7 @@ class LinuxZipFileWithPermissions(zipfile.ZipFile):
     """Class for extract files in linux with right permissions
     https://stackoverflow.com/a/54748564
     """
+
     def _extract_member(self, member, targetpath=None, pwd=None):
         if not isinstance(member, zipfile.ZipInfo):
             member = self.getinfo(member)
@@ -30,47 +31,45 @@ class LinuxZipFileWithPermissions(zipfile.ZipFile):
 
 
 def unpack_zip(zip_path):
-    """Unzip zip to same diretory
-    """
-    zip_class = zipfile.ZipFile \
-        if platform.system() == 'Windows' \
-        else LinuxZipFileWithPermissions \
-
+    """Unzip zip to same diretory"""
+    zip_class = zipfile.ZipFile if platform.system() == "Windows" else LinuxZipFileWithPermissions
     archive = zip_class(zip_path)
     try:
         archive.extractall(Path(zip_path).parent)
     except Exception as e:
-        if e.args[0] not in [26, 13] and e.args[1] not in ['Text file busy', 'Permission denied']:
+        if e.args[0] not in [26, 13] and e.args[1] not in ["Text file busy", "Permission denied"]:
             raise e
     return archive.namelist()
 
 
 @contextmanager
 def download_file(url) -> Path:
-    """Better download
-    """
+    """Better download"""
     name = Path(urlparse(unquote(url)).path).name
     with mktempdir() as tmpdir:
+
         @backoff.on_exception(backoff.expo, requests.exceptions.RequestException, max_time=30)
         def get():
             with requests.get(url, stream=True) as r:
                 save_path = tmpdir.joinpath(name)
-                with open(save_path, 'wb') as f:
-                    shutil.copyfileobj(r.raw, f, length=16*1024*1024)
+                with open(save_path, "wb") as f:
+                    shutil.copyfileobj(r.raw, f, length=16 * 1024 * 1024)
                 return save_path
+
         yield get()
 
 
 @contextmanager
 def mktempdir() -> Path:
-    """Having errors removing temp directories in Widnows...
-    """
+    """Having errors removing temp directories in Widnows..."""
     try:
         tmp = tempfile.mkdtemp()
         yield Path(tmp)
     finally:
+
         @backoff.on_exception(backoff.expo, shutil.Error, max_time=10)
         def remove():
             shutil.rmtree(tmp, ignore_errors=False)
             logger.debug(f"Removed {tmp}")
+
         remove()

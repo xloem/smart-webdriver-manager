@@ -11,16 +11,16 @@ from smart_webdriver_manager.utils import unpack_zip
 from . import logger
 
 
-DEFAULT_BASE_PATH  = {
-    'Windows': Path("~/appdata/roaming/swm").expanduser(),
-    'Linux':   Path("~/.local/share/swm").expanduser(),
-    'Drawin':  Path("~/Library/Application Support/swm").expanduser(),
-    }.get(platform.system(), Path('~/.swm').expanduser())
+DEFAULT_BASE_PATH = {
+    "Windows": Path("~/appdata/roaming/swm").expanduser(),
+    "Linux": Path("~/.local/share/swm").expanduser(),
+    "Drawin": Path("~/Library/Application Support/swm").expanduser(),
+}.get(platform.system(), Path("~/.swm").expanduser())
 
 
 class SmartCache(metaclass=ABCMeta):
-    """Shared Cache parent, controls cache behavior
-    """
+    """Shared Cache parent, controls cache behavior"""
+
     def __init__(self, cache_name, base_path=None):
         self._base_path = Path(base_path or DEFAULT_BASE_PATH).expanduser()
         self._cache_json_path = self._base_path.joinpath(f"{cache_name}.json")
@@ -34,13 +34,13 @@ class SmartCache(metaclass=ABCMeta):
             logger.info(f"There is no {key}, {release}, {revision=} in cache")
             return
         driver_info = metadata[key]
-        path = driver_info['binary_path']
+        path = driver_info["binary_path"]
         logger.info(f"{key} found in cache at path {path}")
         return Path(path)
 
     @abstractmethod
     def put(self, f, typ, release, revision=None) -> Path:
-        path = Path(self._cache_base_path, typ, release, revision or '')
+        path = Path(self._cache_base_path, typ, release, revision or "")
         path.mkdir(parents=True, mode=0o755, exist_ok=True)
 
         f = Path(f)
@@ -78,8 +78,8 @@ class SmartCache(metaclass=ABCMeta):
         for f in files:
             name = Path(f).name
             # FIXME: Mac will not return the correct app
-            re_match = re.compile(r'(ium)?(.(exe|app))?$')
-            if f'{re_match.sub("", name).lower()}' in f'{typ}':
+            re_match = re.compile(r"(ium)?(.(exe|app))?$")
+            if f'{re_match.sub("", name).lower()}' in f"{typ}":
                 return Path(f)
         raise Exception(f"Can't get binary for {typ} among {files}")
 
@@ -89,25 +89,25 @@ class SmartCache(metaclass=ABCMeta):
         data = {
             key: {
                 "timestamp": datetime.date.today().strftime("%m/%d/%Y"),
-                "binary_path": str(binary_path)
+                "binary_path": str(binary_path),
             }
         }
         metadata.update(data)
-        with open(self._cache_json_path, 'w+') as outfile:
+        with open(self._cache_json_path, "w+") as outfile:
             json.dump(metadata, outfile, indent=4)
 
     def _read_metadata(self):
         if Path(self._cache_json_path).exists():
-            with open(self._cache_json_path, 'r') as outfile:
+            with open(self._cache_json_path, "r") as outfile:
                 return json.load(outfile)
         return {}
 
 
 class DriverCache(SmartCache):
-    """Driver Cache
-    """
+    """Driver Cache"""
+
     def __init__(self, driver_name, base_path=None):
-        super().__init__('drivers', base_path)
+        super().__init__("drivers", base_path)
         self._driver_name = driver_name
 
     def get(self, release):
@@ -122,10 +122,10 @@ class DriverCache(SmartCache):
 
 
 class BrowserCache(SmartCache):
-    """Browser Cache
-    """
+    """Browser Cache"""
+
     def __init__(self, browser_name, base_path=None):
-        super().__init__('browsers', base_path)
+        super().__init__("browsers", base_path)
         self._browser_name = browser_name
 
     def get(self, release, revision=None):
@@ -140,8 +140,8 @@ class BrowserCache(SmartCache):
 
 
 class BrowserUserDataCache:
-    """Browser User Data Cache
-    """
+    """Browser User Data Cache"""
+
     def __init__(self, browser_name, base_path=None):
         self._browser_cache = BrowserCache(browser_name, base_path)
 
@@ -149,8 +149,8 @@ class BrowserUserDataCache:
         browser_path = self._browser_cache.get(release, revision)
         if not browser_path:
             raise AssertionError("get_browser() not yet called")
-        user_data_path = Path(*browser_path.parts[:browser_path.parts.index(release)+1])
-        user_data_path = user_data_path.joinpath('UserData')
+        user_data_path = Path(*browser_path.parts[: browser_path.parts.index(release) + 1])
+        user_data_path = user_data_path.joinpath("UserData")
         user_data_path.mkdir(mode=0o755, exist_ok=True)
         logger.info(f"Got user data {user_data_path} for {self._browser_cache._browser_name}")
         return user_data_path

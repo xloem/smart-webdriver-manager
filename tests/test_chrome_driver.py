@@ -1,12 +1,7 @@
 import pytest
 import glob
 from mock import Mock
-from asserts import (
-    assert_equal,
-    assert_not_equal,
-    assert_in,
-    assert_true
-    )
+from asserts import assert_equal, assert_not_equal, assert_in, assert_true
 
 from pathlib import Path
 
@@ -17,10 +12,11 @@ from smart_webdriver_manager.utils import mktempdir
 from util import run_chrome_helper
 
 import logging
+
 logging.basicConfig(level=logging.INFO)
 
 
-@pytest.mark.parametrize('version', [90, 80, 70])
+@pytest.mark.parametrize("version", [90, 80, 70])
 def test_chrome_manager_with_specific_version(version):
     print("=test_chrome_manager_with_specific_version")
     with mktempdir() as tmpdir:
@@ -65,13 +61,14 @@ def test_chrome_manager_cached_driver_with_selenium():
         assert_not_equal(browser_path_1, browser_path_3)
 
 
-@pytest.mark.parametrize('platform', ['Windows', 'Linux', 'Darwin'])
+@pytest.mark.parametrize("platform", ["Windows", "Linux", "Darwin"])
 def test_can_get_driver_for_platform(platform):
     print(f"=test_can_get_driver_for_platform {platform}")
     with mktempdir() as tmpdir:
         print()
 
         import platform as platform_
+
         platform_.system = Mock(return_value=platform)
         cdm = ChromeDriverManager(base_path=tmpdir, version=96)
         driver_path = Path(cdm.get_driver())
@@ -80,33 +77,31 @@ def test_can_get_driver_for_platform(platform):
         scm = SmartChromeContextManager(base_path=tmpdir)
         driver_platform = scm.driver_platform
 
-        driver_files = {Path(f).name for f in glob.glob(f'{driver_path.parent}/*')}
-        assert_equal(driver_files, {
-            f'chromedriver_{driver_platform}.zip',
-            f'chromedriver{".exe" if platform=="Windows" else ""}'
-            })
+        driver_files = {Path(f).name for f in glob.glob(f"{driver_path.parent}/*")}
+        assert_equal(
+            driver_files,
+            {f"chromedriver_{driver_platform}.zip", f'chromedriver{".exe" if platform=="Windows" else ""}'},
+        )
 
 
-@pytest.mark.parametrize('platform', ['Windows', 'Linux', 'Darwin'])
+@pytest.mark.parametrize("platform", ["Windows", "Linux", "Darwin"])
 def test_can_get_browser_for_platform(platform):
     print(f"=test_can_get_browser_for_platform {platform}")
     with mktempdir() as tmpdir:
         print()
 
         import platform as platform_
+
         platform_.system = Mock(return_value=platform)
         cdm = ChromeDriverManager(base_path=tmpdir, version=96)
         browser_path = Path(cdm.get_browser())
         assert_true(browser_path.exists())
 
         scm = SmartChromeContextManager(base_path=tmpdir)
-        browser_zip = scm.browser_zip(999999) # see code
+        browser_zip = scm.browser_zip(999999)  # see code
 
-        browser_files = {Path(f).name for f in glob.glob(f'{browser_path.parents[1]}/*')}
-        assert_equal(browser_files, {
-            f'chrome-{browser_zip}.zip',
-            f'chrome-{browser_zip}'
-            })
+        browser_files = {Path(f).name for f in glob.glob(f"{browser_path.parents[1]}/*")}
+        assert_equal(browser_files, {f"chrome-{browser_zip}.zip", f"chrome-{browser_zip}"})
 
 
 def test_order_doesnt_matter():
@@ -142,5 +137,5 @@ def test_chrome_uses_data_dir():
         run_chrome_helper(driver_path, browser_path, user_data_dir)
 
 
-if __name__ == '__main__':
-    pytest.main(args=['-s', __file__])
+if __name__ == "__main__":
+    pytest.main(args=["-s", __file__])

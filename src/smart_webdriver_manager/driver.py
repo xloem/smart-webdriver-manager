@@ -7,7 +7,6 @@ from . import logger
 
 
 class DriverManager(metaclass=ABCMeta):
-
     def __init__(self, version, base_path):
         self._base_path = base_path
         self._version = version
@@ -27,7 +26,7 @@ class DriverManager(metaclass=ABCMeta):
 
     # @abstractmethod
     # def remove():
-        # pass
+    # pass
 
 
 class ChromeDriverManager(DriverManager):
@@ -35,7 +34,7 @@ class ChromeDriverManager(DriverManager):
     __called_driver__ = False
     __called_browser__ = False
 
-    def __init__(self, version:int=0, base_path=None):
+    def __init__(self, version: int = 0, base_path=None):
         super().__init__(version, base_path)
         self._cx = SmartChromeContextManager(self._base_path)
 
