@@ -54,24 +54,7 @@ class SmartCache(metaclass=ABCMeta):
         logger.info(f"{typ} has been saved in cache at path {path}")
         return binary_path
 
-    # @abstractmethod
-    # def symlink(self, binary_path, name):
-        # symlink = self._base_path.joinpath(name).resolve()
-        # try:
-            # symlink = Path(binary_path)\
-                # .symlink_to(symlink)\
-                # .resolve(strict=True)
-        # except FileExistsError:
-            # symlink.unlink()
-            # symlink = Path(binary_path)\
-                # .symlink_to(symlink)\
-                # .resolve(strict=True)
-        # except:
-            # pass
-        # logger.info(f"Created symlink {binary_path} -> {symlink}")
-        # return symlink
-
-    def _match_binary(self, files:list, typ:str) -> Path:
+    def _match_binary(self, files: list, typ: str) -> Path:
         logger.debug(f"Matching {typ} in candidate files")
         if len(files) == 1:
             return files[0]
@@ -116,10 +99,6 @@ class DriverCache(SmartCache):
     def put(self, f, release):
         return super().put(f, self._driver_name, release)
 
-    # def symlink(self, f, release):
-        # logger.info(f"Getting {self._driver_name} release {release} from cache for symlink")
-        # return super().symlink(self.get(release), self._driver_name)
-
 
 class BrowserCache(SmartCache):
     """Browser Cache"""
@@ -133,10 +112,6 @@ class BrowserCache(SmartCache):
 
     def put(self, f, release, revision=None):
         return super().put(f, self._browser_name, release, revision)
-
-    # def symlink(self, f, release, revision=None):
-        # logger.info(f"Getting {self._browser_name} release {release} {revision=} from cache for symlink")
-        # return super().symlink(self.get(release, revision), self._browser_name)
 
 
 class BrowserUserDataCache:

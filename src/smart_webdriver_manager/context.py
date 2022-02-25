@@ -150,7 +150,6 @@ class SmartChromeContextManager(SmartContextManager):
             binary_path = self._driver_cache.put(f, release)
             logger.debug(f"Downloaded {zip_file}")
 
-        # self._driver_cache.symlink(binary_path, release)
         return binary_path
 
     def get_browser(self, release: str, revision: str = None) -> Path:
@@ -169,7 +168,6 @@ class SmartChromeContextManager(SmartContextManager):
             binary_path = self._browser_cache.put(f, release, revision)
             logger.debug(f"Downloaded {zip_file}")
 
-        # self._browser_cache.symlink(binary_path, release, revision)
         return binary_path
 
     def get_browser_user_data(self, release: str, revision: str) -> Path:
@@ -178,5 +176,4 @@ class SmartChromeContextManager(SmartContextManager):
         """
         data_dir_path = self._browser_user_data_cache.get(release, revision)
 
-        # self._browser_user_data_cache.symlink(binary_path, release)
         return str(data_dir_path)

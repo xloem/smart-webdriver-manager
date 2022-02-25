@@ -132,9 +132,6 @@ swm/
                 geckodriver
     browsers.json
     drivers.json
-    -> chrome (symlink) [not implemented]
-    -> chromedriver.exe (symlink) [not implemented]
-    -> chrome_user_data (symlink) [not implemented]
 """
 ```
 
@@ -148,9 +145,10 @@ TODO
 ----
 - [x] Change the user data directory to fall under the major version, not release (see illustration above).
 - [ ] Complete support for Mac. Parse .app directory and create workaround for Gatekeeper.
-- [ ] Decide whether symlinks have value, remove code if not.
+- [x] Decide whether symlinks have value, remove code if not. (REMOVED)
 - [ ] Complete the cache clear/remove methods. Write methods to delete the data directory or parts of the cache.
 - [ ] Add Firefox as another supported platform. Current support is limited to Chromium/Chromedriver.
+- [ ] Ability to recover if part of the cache is missing (ie a browser not there but browsers.json says so) (check path exists)
 
 Contributing
 ------------
