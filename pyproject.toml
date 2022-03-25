@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "smart-webdriver-manager"
-version = "0.2.0"
+version = "0.3.0"
 description = "A smart webdriver and browser manager"
 readme = "README.md"
 license = "MIT"
@@ -19,7 +19,7 @@ classifiers=[
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.7"
 requests = "^2.26.0"
 backoff = "^1.11.1"
 mock = {version = "^4.0.3", optional = true}
