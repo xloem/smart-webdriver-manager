@@ -28,15 +28,32 @@ class SmartContextManager(metaclass=ABCMeta):
 
     @property
     def driver_platform(self):
-        return {"Windows": "win32", "Linux": "linux64", "Darwin": "mac64"}.get(platform.system())
+        # https://chromedriver.storage.googleapis.com/index.html?path=2.33/
+        return {
+            "Windows": "win32",
+            "Linux": {
+                "x86_64": "linux64",
+                "i686": "linux32",
+            }.get(platform.machine()),
+            "Darwin": "mac64",
+        }.get(platform.system())
 
     @property
     def browser_platform(self):
-        return {
-            "Windows": "Win_x64",
-            "Linux": "Linux_x64",
+        # https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html
+        system = {
+            "Windows": "Win",
+            "Linux": "Linux",
             "Darwin": "Mac",
-        }.get(platform.system())
+        }.get(platform.system(), "")
+        machine = {
+            "AMD64": "_x64" if system != "Mac" else "",
+            "x86_64": "_x64" if system != "Mac" else "",
+            "armv6l": "_ARM_Cross-Compile",
+            "armv7l": "_ARM_Cross-Compile",
+            "arm64": "_Arm",
+        }.get(platform.machine(), "")
+        return system + machine
 
     @abstractmethod
     def get_driver_release(self, version: int = 0) -> Version:
@@ -84,8 +101,8 @@ class SmartChromeContextManager(SmartContextManager):
         self.url_driver_repo = "https://chromedriver.storage.googleapis.com"
         self.url_driver_repo_latest = f"{self.url_driver_repo}/LATEST_RELEASE"
 
-        url_browser_repo = "https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o"
-        self.url_browser_zip = f"{url_browser_repo}/{self.browser_platform}%2F{{}}%2Fchrome-{{}}.zip?alt=media"
+        self.url_browser_repo = "https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o"
+        self.url_browser_zip = f"{self.url_browser_repo}/{self.browser_platform}%2F{{}}%2Fchrome-{{}}.zip?alt=media"
 
     def browser_zip(self, revision: str):
         win = lambda x: "win" if x > 591479 else "win32"  # naming changes (roughly v70)
@@ -99,6 +116,9 @@ class SmartChromeContextManager(SmartContextManager):
     def get_driver_release(self, version: int = 0) -> Version:
         """Find the latest driver version corresponding to the browser release"""
         logger.debug(f"Getting {self._driver_name} version for {version}")
+        if platform.system() == 'Linux' and platform.machine() in ("i686", "i386", "x86"):
+            # the last linux32 release was 2.33
+            return parse('2.33')
         _version = f"_{version}" if version else ""
         url = f"{self.url_driver_repo_latest}{_version}"
         resp = requests.get(url)
@@ -121,7 +141,16 @@ class SmartChromeContextManager(SmartContextManager):
         url_repo = "https://omahaproxy.appspot.com"
         release = self.get_driver_release(version)
         revision_url = f"{url_repo}/deps.json?version={str(release)}"
-        revision = int(json.loads(requests.get(revision_url).content.decode())["chromium_base_position"])
+        release_info = requests.get(revision_url)
+        if release_info.status_code == 200:
+            revision = int(json.loads(release_info.content.decode())["chromium_base_position"])
+        else:
+            revision = None
+
+        last_change_url = f"{self.url_browser_repo}/{self.browser_platform}%2FLAST_CHANGE?alt=media"
+        latest_available_revision = int(requests.get(last_change_url).content.decode())
+        if revision is None or latest_available_revision < revision:
+            revision = latest_available_revision
 
         while True:
             logger.debug(f"Trying revision {revision} ... ")
