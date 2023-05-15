@@ -101,8 +101,8 @@ class SmartChromeContextManager(SmartContextManager):
         self.url_driver_repo = "https://chromedriver.storage.googleapis.com"
         self.url_driver_repo_latest = f"{self.url_driver_repo}/LATEST_RELEASE"
 
-        url_browser_repo = "https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o"
-        self.url_browser_zip = f"{url_browser_repo}/{self.browser_platform}%2F{{}}%2Fchrome-{{}}.zip?alt=media"
+        self.url_browser_repo = "https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o"
+        self.url_browser_zip = f"{self.url_browser_repo}/{self.browser_platform}%2F{{}}%2Fchrome-{{}}.zip?alt=media"
 
     def browser_zip(self, revision: str):
         win = lambda x: "win" if x > 591479 else "win32"  # naming changes (roughly v70)
@@ -139,6 +139,11 @@ class SmartChromeContextManager(SmartContextManager):
         release = self.get_driver_release(version)
         revision_url = f"{url_repo}/deps.json?version={str(release)}"
         revision = int(json.loads(requests.get(revision_url).content.decode())["chromium_base_position"])
+
+        last_change_url = f"{self.url_browser_repo}/{self.browser_platform}%2FLAST_CHANGE?alt=media"
+        last_change = int(requests.get(last_change_url).content.decode())
+        if revision > last_change:
+            revision = last_change
 
         while True:
             logger.debug(f"Trying revision {revision} ... ")
