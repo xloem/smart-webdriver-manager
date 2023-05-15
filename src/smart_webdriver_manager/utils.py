@@ -5,6 +5,7 @@ import tempfile
 import requests
 import backoff
 import platform
+import tqdm
 from contextlib import contextmanager
 from urllib.parse import urlparse, unquote
 from pathlib import Path
@@ -45,15 +46,19 @@ def unpack_zip(zip_path):
 @contextmanager
 def download_file(url) -> Path:
     """Better download"""
-    name = Path(urlparse(unquote(url)).path).name
+    name = Path(urlparse(url).path).name
     with mktempdir() as tmpdir:
 
         @backoff.on_exception(backoff.expo, requests.exceptions.RequestException, max_time=30)
         def get():
             with requests.get(url, stream=True) as r:
                 save_path = tmpdir.joinpath(name)
-                with open(save_path, "wb") as f:
-                    shutil.copyfileobj(r.raw, f, length=16 * 1024 * 1024)
+                total = int(r.headers.get('content-length', 0))
+                chunk = 16 * 1024 * 1024
+                with open(save_path, "wb") as f, tqdm.tqdm(total=total, desc=name, unit='B', unit_scale=True) as p:
+                    while buf := r.raw.read(chunk):
+                        f.write(buf)
+                        p.update(len(buf))
                 return save_path
 
         yield get()
