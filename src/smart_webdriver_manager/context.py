@@ -116,6 +116,9 @@ class SmartChromeContextManager(SmartContextManager):
     def get_driver_release(self, version: int = 0) -> Version:
         """Find the latest driver version corresponding to the browser release"""
         logger.debug(f"Getting {self._driver_name} version for {version}")
+        if platform.system() == 'Linux' and platform.machine() in ("i686", "i386", "x86"):
+            # the last linux32 release was 2.33
+            return parse('2.33')
         _version = f"_{version}" if version else ""
         url = f"{self.url_driver_repo_latest}{_version}"
         resp = requests.get(url)
@@ -138,12 +141,16 @@ class SmartChromeContextManager(SmartContextManager):
         url_repo = "https://omahaproxy.appspot.com"
         release = self.get_driver_release(version)
         revision_url = f"{url_repo}/deps.json?version={str(release)}"
-        revision = int(json.loads(requests.get(revision_url).content.decode())["chromium_base_position"])
+        release_info = requests.get(revision_url)
+        if release_info.status_code == 200:
+            revision = int(json.loads(release_info.content.decode())["chromium_base_position"])
+        else:
+            revision = None
 
         last_change_url = f"{self.url_browser_repo}/{self.browser_platform}%2FLAST_CHANGE?alt=media"
-        last_change = int(requests.get(last_change_url).content.decode())
-        if revision > last_change:
-            revision = last_change
+        latest_available_revision = int(requests.get(last_change_url).content.decode())
+        if revision is None or latest_available_revision < revision:
+            revision = latest_available_revision
 
         while True:
             logger.debug(f"Trying revision {revision} ... ")
