@@ -127,7 +127,7 @@ class SmartChromeContextManager(SmartContextManager):
             logger.debug(f"Trying revision {revision} ... ")
             browser_zip = self.browser_zip(revision)
             url_browser_zip = self.url_browser_zip.format(revision, browser_zip)
-            status_code = requests.get(url_browser_zip).status_code
+            status_code = requests.head(url_browser_zip).status_code
             if status_code == 200:
                 break
             revision -= 1
