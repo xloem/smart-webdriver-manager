@@ -45,14 +45,14 @@ class SmartContextManager(metaclass=ABCMeta):
             "Windows": "Win",
             "Linux": "Linux",
             "Darwin": "Mac",
-        }.get(platform.system())
+        }.get(platform.system(), "")
         machine = {
             "AMD64": "_x64" if system != "Mac" else "",
             "x86_64": "_x64" if system != "Mac" else "",
             "armv6l": "_ARM_Cross-Compile",
             "armv7l": "_ARM_Cross-Compile",
             "arm64": "_Arm",
-        }.get(platform.machine())
+        }.get(platform.machine(), "")
         return system + machine
 
     @abstractmethod
