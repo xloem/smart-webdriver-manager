@@ -28,15 +28,32 @@ class SmartContextManager(metaclass=ABCMeta):
 
     @property
     def driver_platform(self):
-        return {"Windows": "win32", "Linux": "linux64", "Darwin": "mac64"}.get(platform.system())
+        # https://chromedriver.storage.googleapis.com/index.html?path=2.33/
+        return {
+            "Windows": "win32",
+            "Linux": {
+                "x86_64": "linux64",
+                "i686": "linux32",
+            }.get(platform.machine()),
+            "Darwin": "mac64",
+        }.get(platform.system())
 
     @property
     def browser_platform(self):
-        return {
-            "Windows": "Win_x64",
-            "Linux": "Linux_x64",
+        # https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html
+        system = {
+            "Windows": "Win",
+            "Linux": "Linux",
             "Darwin": "Mac",
         }.get(platform.system())
+        machine = {
+            "AMD64": "_x64" if system != "Mac" else "",
+            "x86_64": "_x64" if system != "Mac" else "",
+            "armv6l": "_ARM_Cross-Compile",
+            "armv7l": "_ARM_Cross-Compile",
+            "arm64": "_Arm",
+        }.get(platform.machine())
+        return system + machine
 
     @abstractmethod
     def get_driver_release(self, version: int = 0) -> Version:
