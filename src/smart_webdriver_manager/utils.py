@@ -7,7 +7,8 @@ import backoff
 import platform
 import tqdm
 from contextlib import contextmanager
-from dissect.squashfs import SquashFS
+#from dissect.squashfs import SquashFS
+from poorly_done_squashfs_tools import unsquashfs
 from urllib.parse import urlparse, unquote
 from pathlib import Path
 from packaging.version import parse, Version
@@ -46,38 +47,44 @@ def unpack_zip(zip_path):
 
 def unpack_squashfs(squashfs_path):
     """Unpack squashfs to same directory"""
+    folder = str(Path(squashfs_path).parent)
+    unsquashfs('-dest', folder, '-quiet', str(squashfs_path))
     namelist = []
-    queue = []
-    with open(squashfs_path, "rb") as fh:
-        archive = SquashFS(fh)
-        import pdb; pdb.set_trace()
-        total = sum([inode.size for inode in tqdm.tqdm(archive.iter_inodes()) if inode.is_file()])
-        with tqdm.tqdm(total=total, desc="unsquashfs", leave=False, unit='B', unit_scale=True) as p:
-            parent = Path(squashfs_path).parent
-            path, inode = (Path(''), archive.get('/'))
-            while True:
-                p.desc = str(path)
-                if inode.is_dir():
-                    queue.extend([
-                        ((path, inode), item)
-                        for item in inode.listdir().items()
-                    ])
-                    (parent/path).mkdir(parents=True, exist_ok=True)
-                elif inode.is_symlink():
-                    (parent/path).symlink_to(inode.link)
-                else:
-                    total = inode.size
-                    chunk = 16 * 1024 * 1024
-                    with inode.open() as inf, open((parent/path), 'wb') as outf:
-                        while buf := inf.read(chunk):
-                            outf.write(buf)
-                            p.update(len(buf))
-                    namelist.append(str(path))
-                if not len(queue):
-                    break
-                (parent_path, parent_inode), (path, inode) = queue.pop()
-                path = parent_path / path
+    for dirpath, dirnames, filenames in os.walk(folder):
+        namelist.extend([os.path.join(dirpath, name) for name in filenames])
     return namelist
+    #namelist = []
+    #queue = []
+    #with open(squashfs_path, "rb") as fh:
+    #    archive = SquashFS(fh)
+    #    import pdb; pdb.set_trace()
+    #    total = sum([inode.size for inode in tqdm.tqdm(archive.iter_inodes(), total=archive.sb.inodes) if inode.is_file()])
+    #    with tqdm.tqdm(total=total, desc="unsquashfs", leave=False, unit='B', unit_scale=True) as p:
+    #        parent = Path(squashfs_path).parent
+    #        path, inode = (Path(''), archive.get('/'))
+    #        while True:
+    #            p.desc = str(path)
+    #            if inode.is_dir():
+    #                queue.extend([
+    #                    ((path, inode), item)
+    #                    for item in inode.listdir().items()
+    #                ])
+    #                (parent/path).mkdir(parents=True, exist_ok=True)
+    #            elif inode.is_symlink():
+    #                (parent/path).symlink_to(inode.link)
+    #            else:
+    #                total = inode.size
+    #                chunk = 16 * 1024 * 1024
+    #                with inode.open() as inf, open((parent/path), 'wb') as outf:
+    #                    while buf := inf.read(chunk):
+    #                        outf.write(buf)
+    #                        p.update(len(buf))
+    #                namelist.append(str(path))
+    #            if not len(queue):
+    #                break
+    #            (parent_path, parent_inode), (path, inode) = queue.pop()
+    #            path = parent_path / path
+    #return namelist
 
 
 @contextmanager
