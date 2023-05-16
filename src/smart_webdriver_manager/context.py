@@ -177,3 +177,55 @@ class SmartChromeContextManager(SmartContextManager):
         data_dir_path = self._browser_user_data_cache.get(release, revision)
 
         return str(data_dir_path)
+
+class SmartChromeSnapContextManager(SmartChromeContextManager):
+
+    def __init__(self, base_path=None):
+        super().__init__(base_path)
+
+        self.url_browser_info = 'https://api.snapcraft.io/v2/snaps/info/chromium?architecture={}'
+        self.url_browser_info_headers = {
+            'Snap-Device-Series': '16',
+        }
+
+    def browser_arch(self):
+        return {
+            "AMD64": "amd64",
+            "x86_64": "amd64",
+            "armv6l": "armhf",
+            "armv7l": "armhf",
+            "arm64": "arm64",
+        }.get(platform.machine(), "i386")
+
+    def get_browser_release(self, version: int = 0) -> (Version, Version):
+        """Just returns the latest snap."""
+        #driver_release = self.get_driver_release(version)
+        arch = self.browser_arch()
+        browser_info = requests.get(self.url_browser_info.format(arch), headers=self.url_browser_info_headers).json()
+        revision, version = [
+            (channel['revision'], channel['version'])
+            for channel in browser_info['channel-map']
+            if channel['channel']['name'] == 'stable'
+        ][0]
+        return parse(version), parse(str(revision))
+        
+
+    def get_browser(self, release: str, revision: str = None) -> Path:
+        binary_path = self._browser_cache.get(release, revision)
+        if binary_path:
+            logger.debug(f"Already have latest version for {release=} {revision=}")
+            return binary_path
+        arch = self.browser_arch()
+        browser_info = requests.get(self.url_browser_info.format(arch), headers=self.url_browser_info_headers).json()
+        url_snap = [
+            channel['download']['url']
+            for channel in browser_info['channel-map']
+            if str(channel['revision']) == revision
+            and channel['version'] == release
+        ][0]
+        logger.debug(f"Getting {url_snap}")
+        with download_file(url_snap) as f:
+            binary_path = self._browser_cache.put(f, release, revision)
+            logger.debug(f"Downloaded {url_snap}")
+
+        return binary_path

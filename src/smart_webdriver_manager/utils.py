@@ -7,6 +7,7 @@ import backoff
 import platform
 import tqdm
 from contextlib import contextmanager
+from dissect.squashfs import SquashFS
 from urllib.parse import urlparse, unquote
 from pathlib import Path
 from packaging.version import parse, Version
@@ -41,6 +42,34 @@ def unpack_zip(zip_path):
         if e.args[0] not in [26, 13] and e.args[1] not in ["Text file busy", "Permission denied"]:
             raise e
     return archive.namelist()
+
+
+def unpack_squashfs(squashfs_path):
+    """Unpack squashfs to same directory"""
+    namelist = []
+    queue = []
+    with open(squashfs_path, "rb") as fh:
+        archive = SquashFS(fh)
+        parent = Path(squashfs_path).parent
+        path, inode = (Path(''), archive.get('/'))
+        while True:
+            if inode.is_dir():
+                queue.extend([
+                    ((path, inode), item)
+                    for item in inode.listdir().items()
+                ])
+                (parent/path).mkdir(parents=True, exist_ok=True)
+            elif inode.is_symlink():
+                (parent/path).symlink_to(inode.link)
+            else:
+                with inode.open() as infh, open((parent/path), 'wb') as outfh:
+                    shutil.copyfileobj(infh, outfh, length=16 * 1024 * 1024)
+                namelist.append(str(path))
+            if not len(queue):
+                break
+            (parent_path, parent_inode), (path, inode) = queue.pop()
+            path = parent_path / path
+    return namelist
 
 
 @contextmanager

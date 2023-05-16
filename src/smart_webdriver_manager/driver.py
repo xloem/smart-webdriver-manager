@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from functools import cache
 
-from smart_webdriver_manager.context import SmartChromeContextManager
+from smart_webdriver_manager.context import SmartChromeSnapContextManager as SmartChromeContextManager
 
 from . import logger
 

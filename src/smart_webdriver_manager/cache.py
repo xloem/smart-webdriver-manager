@@ -6,7 +6,7 @@ import glob
 
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
-from smart_webdriver_manager.utils import unpack_zip
+from smart_webdriver_manager.utils import unpack_zip, unpack_squashfs
 
 from . import logger
 
@@ -44,9 +44,13 @@ class SmartCache(metaclass=ABCMeta):
         path.mkdir(parents=True, mode=0o755, exist_ok=True)
 
         f = Path(f)
-        zip_path = f.replace(path.joinpath(f.name))
-        logger.debug("Unzipping...")
-        files = unpack_zip(zip_path)
+        path = f.replace(path.joinpath(f.name))
+        if path.name.endswith(".zip"):
+            logger.debug("Unzipping...")
+            files = unpack_zip(path)
+        elif path.name.endswith(".snap"):
+            logger.debug("Unsquashfsing...")
+            files = unpack_squashfs(path)
 
         binary = self._match_binary(files, typ)
         binary_path = Path(path, binary)
